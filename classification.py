@@ -46,6 +46,7 @@ X_test = torch.tensor(X_test, dtype=torch.float32)
 y_train = torch.tensor(y_train, dtype=torch.long)
 y_test = torch.tensor(y_test, dtype=torch.long)
 
+
 # ------------------------------
 # 5. Define model
 # ------------------------------
@@ -57,11 +58,12 @@ class ClassificationModel(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, num_classes)
+            nn.Linear(32, num_classes),
         )
-    
+
     def forward(self, x):
         return self.model(x)
+
 
 num_classes = len(le.classes_)
 model = ClassificationModel(X_train.shape[1], num_classes)
@@ -86,7 +88,7 @@ for epoch in range(epochs):
     optimizer.step()
 
     if (epoch + 1) % 20 == 0:
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+        print(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
 
 # ------------------------------
 # 8. Evaluation
@@ -101,8 +103,15 @@ print(f"\nTest Accuracy: {accuracy:.4f}")
 
 # Confusion matrix
 cm = confusion_matrix(y_test, predictions)
-plt.figure(figsize=(8,6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_, yticklabels=le.classes_)
+plt.figure(figsize=(8, 6))
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt="d",
+    cmap="Blues",
+    xticklabels=le.classes_,
+    yticklabels=le.classes_,
+)
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.title("Confusion Matrix")

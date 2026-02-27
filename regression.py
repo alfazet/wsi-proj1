@@ -6,6 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+# setup device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # 1. Load CSV
 data = pd.read_csv("data/regression/cleaned_dataset.csv")
 seed = 2137
@@ -58,6 +61,13 @@ model = RegressionModel(X_train.shape[1])
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
+# move stuff to device
+X_train = X_train.to(device)
+y_train = y_train.to(device)
+X_test = X_test.to(device)
+y_test = y_test.to(device)
+model = model.to(device)
+
 # 8. Training loop
 epochs = 10000
 
@@ -83,7 +93,9 @@ with torch.no_grad():
     test_loss = criterion(predictions, y_test)
 
     # Convert tensors to NumPy
-    y_pred = predictions.numpy().flatten()
+    y_pred = torch.Tensor.cpu(predictions)
+    y_pred = y_pred.numpy().flatten()
+    y_test = torch.Tensor.cpu(y_test)
     y_true = y_test.numpy().flatten()
 
     # Mean Absolute Error easier to interpret in units of SalePrice
