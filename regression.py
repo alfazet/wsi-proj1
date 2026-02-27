@@ -1,76 +1,82 @@
-#!/usr/bin/env python
-
 import torch
-import math
+import torch.nn as nn
+import torch.optim as optim
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
-data_path = "./data/regression"
+# 1. Load CSV
+data = pd.read_csv("data/regression/cleaned_dataset.csv")
+seed = 2137
 
-df = pd.read_csv(f"{data_path}/dataset.csv") 
-print(df.head()) 
+torch.manual_seed(seed)
 
-# Create Tensors to hold input and outputs.
-x = torch.linspace(-math.pi, math.pi, 2000)
-y = torch.sin(x)
+# 2. Split features and target
+X = data.drop("SalePrice", axis=1).values
+y = data["SalePrice"].values
 
-# For this example, the output y is a linear function of (x, x^2, x^3), so
-# we can consider it as a linear layer neural network. Let's prepare the
-# tensor (x, x^2, x^3).
-p = torch.tensor([1, 2, 3])
-xx = x.unsqueeze(-1).pow(p)
-
-# In the above code, x.unsqueeze(-1) has shape (2000, 1), and p has shape
-# (3,), for this case, broadcasting semantics will apply to obtain a tensor
-# of shape (2000, 3)
-
-# Use the nn package to define our model as a sequence of layers. nn.Sequential
-# is a Module which contains other Modules, and applies them in sequence to
-# produce its output. The Linear Module computes output from input using a
-# linear function, and holds internal Tensors for its weight and bias.
-# The Flatten layer flatens the output of the linear layer to a 1D tensor,
-# to match the shape of `y`.
-model = torch.nn.Sequential(
-    torch.nn.Linear(3, 1),
-    torch.nn.Flatten(0, 1)
+# 3. Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=seed
 )
 
-# The nn package also contains definitions of popular loss functions; in this
-# case we will use Mean Squared Error (MSE) as our loss function.
-loss_fn = torch.nn.MSELoss(reduction='sum')
+# 4. Feature scaling (important for regression)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-learning_rate = 1e-6
-for t in range(2000):
+# 5. Convert to PyTorch tensors
+X_train = torch.tensor(X_train, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
 
-    # Forward pass: compute predicted y by passing x to the model. Module objects
-    # override the __call__ operator so you can call them like functions. When
-    # doing so you pass a Tensor of input data to the Module and it produces
-    # a Tensor of output data.
-    y_pred = model(xx)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
 
-    # Compute and print loss. We pass Tensors containing the predicted and true
-    # values of y, and the loss function returns a Tensor containing the
-    # loss.
-    loss = loss_fn(y_pred, y)
-    if t % 100 == 99:
-        print(t, loss.item())
 
-    # Zero the gradients before running the backward pass.
-    model.zero_grad()
+# 6. Define model
+class RegressionModel(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+        )
 
-    # Backward pass: compute gradient of the loss with respect to all the learnable
-    # parameters of the model. Internally, the parameters of each Module are stored
-    # in Tensors with requires_grad=True, so this call will compute gradients for
-    # all learnable parameters in the model.
+    def forward(self, x):
+        return self.model(x)
+
+
+model = RegressionModel(X_train.shape[1])
+
+# 7. Loss and optimizer
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 8. Training loop
+epochs = 10000
+
+for epoch in range(epochs):
+    model.train()
+
+    # Forward pass
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+
+    # Backward pass
+    optimizer.zero_grad()
     loss.backward()
+    optimizer.step()
 
-    # Update the weights using gradient descent. Each parameter is a Tensor, so
-    # we can access its gradients like we did before.
-    with torch.no_grad():
-        for param in model.parameters():
-            param -= learning_rate * param.grad
+    if (epoch + 1) % 20 == 0:
+        print(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
 
-# You can access the first layer of `model` like accessing the first item of a list
-linear_layer = model[0]
+# 9. Evaluation
+model.eval()
+with torch.no_grad():
+    predictions = model(X_test)
+    test_loss = criterion(predictions, y_test)
 
-# For linear layer, its parameters are stored as `weight` and `bias`.
-print(f'Result: y = {linear_layer.bias.item()} + {linear_layer.weight[:, 0].item()} x + {linear_layer.weight[:, 1].item()} x^2 + {linear_layer.weight[:, 2].item()} x^3')
+print(f"\nTest MSE: {test_loss.item():.4f}")
