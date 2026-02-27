@@ -11,7 +11,7 @@ import seaborn as sns
 # ------------------------------
 # 1. Load data and set seed
 # ------------------------------
-data = pd.read_csv("data/classification/dataset.csv")
+data = pd.read_csv("data/classification/cleaned_dataset.csv")
 seed = 2137
 torch.manual_seed(seed)
 
@@ -19,11 +19,7 @@ torch.manual_seed(seed)
 # 2. Split features and target
 # ------------------------------
 X = data.drop("growth direction", axis=1).values
-y = data["growth direction"].values
-
-# Encode target labels
-le = LabelEncoder()
-y_encoded = le.fit_transform(y)
+y_encoded = data["growth direction"].values
 
 # Train-test split (stratify to preserve class distribution)
 X_train, X_test, y_train, y_test = train_test_split(
@@ -64,8 +60,7 @@ class ClassificationModel(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-
-num_classes = len(le.classes_)
+num_classes = max(y_encoded)+1
 model = ClassificationModel(X_train.shape[1], num_classes)
 
 # ------------------------------
@@ -101,6 +96,8 @@ with torch.no_grad():
 accuracy = accuracy_score(y_test, predictions)
 print(f"\nTest Accuracy: {accuracy:.4f}")
 
+labels = ['horizontal', 'normal', 'vertical']
+
 # Confusion matrix
 cm = confusion_matrix(y_test, predictions)
 plt.figure(figsize=(8, 6))
@@ -109,8 +106,8 @@ sns.heatmap(
     annot=True,
     fmt="d",
     cmap="Blues",
-    xticklabels=le.classes_,
-    yticklabels=le.classes_,
+    xticklabels=labels,
+    yticklabels=labels,
 )
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
@@ -119,4 +116,4 @@ plt.show()
 
 # Detailed classification report
 print("\nClassification Report:")
-print(classification_report(y_test, predictions, target_names=le.classes_))
+print(classification_report(y_test, predictions, target_names=labels))
