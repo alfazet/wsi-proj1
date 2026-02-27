@@ -2,6 +2,12 @@
 
 import torch
 import math
+import pandas as pd
+
+data_path = "./data/regression"
+
+df = pd.read_csv(f"{data_path}/dataset.csv") 
+print(df.head()) 
 
 # Create Tensors to hold input and outputs.
 x = torch.linspace(-math.pi, math.pi, 2000)
