@@ -4,6 +4,7 @@ import torch.optim as optim
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # 1. Load CSV
 data = pd.read_csv("data/regression/cleaned_dataset.csv")
@@ -38,7 +39,9 @@ class RegressionModel(nn.Module):
     def __init__(self, input_dim):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 80),
+            nn.ReLU(),
+            nn.Linear(80, 64),
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
@@ -78,5 +81,22 @@ model.eval()
 with torch.no_grad():
     predictions = model(X_test)
     test_loss = criterion(predictions, y_test)
+
+    # Convert tensors to NumPy
+    y_pred = predictions.numpy().flatten()
+    y_true = y_test.numpy().flatten()
+
+    # Mean Absolute Error easier to interpret in units of SalePrice
+    mae = mean_absolute_error(y_true, y_pred)
+
+    # Root Mean Squared Error similar to MSE but in original scale
+    rmse = mean_squared_error(y_true, y_pred)
+
+    # R^2 Score – proportion of variance explained
+    r2 = r2_score(y_true, y_pred)
+
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+    print(f"R^2 Score: {r2:.3f}")
 
 print(f"\nTest MSE: {test_loss.item():.4f}")
