@@ -2,8 +2,10 @@
 
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import sys
 
 data_path = "./data/regression"
+dataset_name = sys.argv[1] 
 
 def encode_categorical(df):
     for col in df.select_dtypes(include="object").columns:
@@ -48,9 +50,9 @@ def remove_question_marks(df):
     for col in mix_cols:
         df[col] = df[col].replace("?", "Mix")
 
-df = pd.read_csv(f"{data_path}/dataset.csv")
+df = pd.read_csv(f"{data_path}/{dataset_name}")
 check_df(df)
 remove_question_marks(df)
 df = encode_categorical(df)
 check_df(df)
-df.to_csv(f"{data_path}/cleaned_dataset.csv")
+df.to_csv(f"{data_path}/cleaned_{dataset_name}")

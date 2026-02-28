@@ -1,0 +1,31 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    FS = ","
+    OFS = ","
+}
+
+NR == 1 {
+    # Print new header (remove 9_ prefix and add _diff)
+    for (i = 1; i <= NF - 1; i++) {
+        if ($i ~ /^9_/) {
+            name = $i
+            sub(/^9_/, "", name)
+            printf "%s_diff%s", name, OFS
+        }
+    }
+    print "growth direction"
+    next
+}
+
+{
+    # Number of numeric columns (exclude growth direction)
+    half = (NF - 1) / 2
+
+    for (i = 1; i <= half; i++) {
+        norm = ( $(i + half) - $i ) / $(i + half) 
+        printf "%s%s", norm, OFS
+    }
+
+    print $NF
+}

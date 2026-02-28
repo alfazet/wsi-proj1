@@ -5,12 +5,16 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import sys
+
+data_path = "./data/regression"
+dataset_name = sys.argv[1]
 
 # setup device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 1. Load CSV
-data = pd.read_csv("data/regression/cleaned_dataset.csv")
+data = pd.read_csv(f"{data_path}/{dataset_name}")
 seed = 2137
 
 torch.manual_seed(seed)

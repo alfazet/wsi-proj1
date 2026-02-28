@@ -7,11 +7,16 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import sys
+
+data_path = "./data/classification"
+dataset_name = sys.argv[1]
 
 # ------------------------------
 # 1. Load data and set seed
 # ------------------------------
-data = pd.read_csv("data/classification/cleaned_dataset.csv")
+# data = pd.read_csv("data/classification/cleaned_dataset.csv")
+data = pd.read_csv(f"{data_path}/{dataset_name}")
 seed = 2137
 torch.manual_seed(seed)
 
